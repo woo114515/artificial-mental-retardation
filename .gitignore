@@ -8,13 +8,17 @@ __pycache__/
 .venv/
 venv/
 env/
+.python-version
 
 # Environment variables
 .env
 
-# Data files
+# Data: keep original compressed MNIST files, ignore generated data
+data/processed/
+data/**/*.ubyte
+data/**/*.npy
+data/**/*.npz
 datasets/
-
 
 # Logs and outputs
 logs/
