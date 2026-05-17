@@ -9,25 +9,25 @@ import numpy as np
 
 class ReLU:
     def __init__(self):
-        self.x = None
+        self.z = None
 
-    def forward(self, x):
+    def forward(self, z):
         """
-        x: 任意 shape 的 numpy array
-        return: max(0, x)
+        z: 任意 shape 的 numpy array
+        return: max(0, z)
         """
-        self.x = x
-        return np.maximum(0, x)
+        self.z = z
+        return np.maximum(0, z)
 
     def backward(self, dout):
         """
-        dout: 上游传来的梯度，shape 与 x 相同
-        return: dout * (x > 0)
+        dout: 上游传来的梯度，shape 与 z 相同
+        return: dout * (z > 0)
         """
-        if self.x is None:
+        if self.z is None:
             raise RuntimeError("Cannot call backward before forward.")
 
-        return dout * (self.x > 0)
+        return dout * (self.z > 0)
 
     def params_and_grads(self):
         """
