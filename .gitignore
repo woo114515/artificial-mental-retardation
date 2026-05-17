@@ -13,14 +13,8 @@ env/
 .env
 
 # Data files
-data/
 datasets/
 
-# Model checkpoints
-checkpoints/
-*.pkl
-*.npy
-*.npz
 
 # Logs and outputs
 logs/
