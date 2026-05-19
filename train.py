@@ -1,68 +1,122 @@
-'''
-训练入口。不负责具体细节，只把其他模块串起来。
-'''
+"""
+Training entry point for the NumPy MNIST MLP.
+"""
 
-from data.dataloader import create_mini_batches
-import nn
-from config import *
+from __future__ import annotations
+
 import numpy as np
 
-np.random.seed(RANDOM_SEED)
+import nn
+from config import (
+    BATCH_SIZE,
+    HIDDEN_DIMS,
+    INPUT_DIM,
+    LEARNING_RATE,
+    NUM_CLASSES,
+    NUM_EPOCHS,
+    RANDOM_SEED,
+    WEIGHT_INIT,
+)
+from data.dataloader import create_mini_batches
+from utils.metrics import evaluate
+from utils.plot import plot_history
 
-# load MNIST
-from data.mnist import X_train, y_train, X_val, y_val, X_test, y_test
 
-# build model from config, e.g. 784 -> 128 -> 10
-layers = []
-layer_dims = [INPUT_DIM] + HIDDEN_DIMS + [NUM_CLASSES]
+def build_model():
+    """
+    Build an MLP from config.py.
 
-for layer_index in range(len(layer_dims) - 1):
-    layers.append(
-        nn.Linear(
-            in_features=layer_dims[layer_index],
-            out_features=layer_dims[layer_index + 1],
-            method=WEIGHT_INIT,
-            seed=RANDOM_SEED + layer_index,
+    Example:
+        HIDDEN_DIMS = [128] builds 784 -> 128 -> 10.
+    """
+    layers = []
+    layer_dims = [INPUT_DIM] + HIDDEN_DIMS + [NUM_CLASSES]
+
+    for layer_index in range(len(layer_dims) - 1):
+        layers.append(
+            nn.Linear(
+                in_features=layer_dims[layer_index],
+                out_features=layer_dims[layer_index + 1],
+                method=WEIGHT_INIT,
+                seed=RANDOM_SEED + layer_index,
+            )
         )
-    )
 
-    if layer_index < len(layer_dims) - 2:
-        layers.append(nn.ReLU())
+        if layer_index < len(layer_dims) - 2:
+            layers.append(nn.ReLU())
 
-model = nn.Sequential(layers)
-criterion = nn.SoftmaxCrossEntropyLoss()
-optimizer = nn.SGD(LEARNING_RATE)
+    return nn.Sequential(layers)
 
-# train
-'''
-for epoch in range(NUM_EPOCHS):
-    for X_batch, y_batch in create_mini_batches(...):
-        forward
-        loss
-        backward
-        update
-    evaluate train / val
-'''
 
-for epoch in range(NUM_EPOCHS):
-    for X_batch, y_batch in create_mini_batches( X_train, y_train, batch_size=BATCH_SIZE):
-        
+def train_one_epoch(model, criterion, optimizer, X_train, y_train, batch_size):
+    """
+    Train for one epoch and return the average batch loss weighted by batch size.
+    """
+    total_loss = 0.0
+    total_count = 0
+
+    for X_batch, y_batch in create_mini_batches(X_train, y_train, batch_size=batch_size):
         logits = model.forward(X_batch)
         loss = criterion.forward(logits, y_batch)
-        
+
         dlogits = criterion.backward()
         model.backward(dout=dlogits)
-        
-        params_and_grads = model.params_and_grads()
-        optimizer.step(params_and_grads)
-    
-    val_logits = model.forward(X_val)
-    val_loss = criterion.forward(val_logits, y_val) # loss
-    val_predict = np.argmax(val_logits, axis=1)
-    val_accuracy = np.mean(val_predict == y_val)# accuracy
-    print(f"Epoch {epoch + 1}: loss={val_loss:.4f}, accuracy={val_accuracy:.4f}")
 
-# eval
-test_logits = model.forward(X_test)
-test_accuracy = np.mean(np.argmax(test_logits, axis=1) == y_test)
-print(f"Final test accuracy={test_accuracy}")
+        optimizer.step(model.params_and_grads())
+
+        total_loss += loss * len(y_batch)
+        total_count += len(y_batch)
+
+    return float(total_loss / total_count)
+
+
+def main():
+    np.random.seed(RANDOM_SEED)
+
+    from data.mnist import X_test, X_train, X_val, y_test, y_train, y_val
+
+    model = build_model()
+    criterion = nn.SoftmaxCrossEntropyLoss()
+    optimizer = nn.SGD(LEARNING_RATE)
+
+    history = {
+        "train_loss": [],
+        "val_loss": [],
+        "train_acc": [],
+        "val_acc": [],
+    }
+
+    for epoch in range(NUM_EPOCHS):
+        train_loss = train_one_epoch(
+            model=model,
+            criterion=criterion,
+            optimizer=optimizer,
+            X_train=X_train,
+            y_train=y_train,
+            batch_size=BATCH_SIZE,
+        )
+
+        train_metrics = evaluate(model, X_train, y_train, batch_size=256)
+        val_metrics = evaluate(model, X_val, y_val, criterion=criterion, batch_size=256)
+
+        history["train_loss"].append(train_loss)
+        history["val_loss"].append(val_metrics["loss"])
+        history["train_acc"].append(train_metrics["accuracy"])
+        history["val_acc"].append(val_metrics["accuracy"])
+
+        print(
+            f"Epoch {epoch + 1}: "
+            f"train_loss={train_loss:.4f}, "
+            f"val_loss={val_metrics['loss']:.4f}, "
+            f"train_acc={train_metrics['accuracy']:.4f}, "
+            f"val_acc={val_metrics['accuracy']:.4f}"
+        )
+
+    test_metrics = evaluate(model, X_test, y_test, batch_size=256)
+    print(f"Final test accuracy={test_metrics['accuracy']:.4f}")
+
+    plot_history(history)
+
+
+if __name__ == "__main__":
+    main()
