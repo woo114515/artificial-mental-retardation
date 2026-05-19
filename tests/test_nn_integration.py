@@ -18,7 +18,7 @@ Convention:
 
 import numpy as np
 
-from nn.layers import Linear
+from nn.linear import Linear
 from nn.activations import ReLU
 from nn.losses import SoftmaxCrossEntropyLoss
 from nn.optimizers import SGD

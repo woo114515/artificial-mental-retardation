@@ -1,4 +1,4 @@
-from .layers import Linear
+from .linear import Linear
 from .activations import ReLU
 from .losses import SoftmaxCrossEntropyLoss
 from .optimizers import SGD

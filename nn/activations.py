@@ -6,21 +6,9 @@ from __future__ import annotations
 
 import numpy as np
 
+from .layer import layer
 
-class Activation:
-    def __init__(self):
-        self.z = None
-
-    def forward(self, z):
-        pass
-
-    def backward(self, dout):
-        pass
-
-    def params_and_grads(self):
-        pass
-
-class ReLU(Activation):
+class ReLU(layer):
     def __init__(self):
         super().__init__()
 
@@ -48,7 +36,7 @@ class ReLU(Activation):
         """
         return []
     
-class Sigmoid(Activation):
+class Sigmoid(layer):
     def __init__(self):
         super().__init__()
 
