@@ -70,6 +70,16 @@ def train_one_epoch(model, criterion, optimizer, X_train, y_train, batch_size):
     return float(total_loss / total_count)
 
 
+def get_hyperparams():
+    return {
+        "BATCH_SIZE": BATCH_SIZE,
+        "HIDDEN_DIMS": HIDDEN_DIMS,
+        "LEARNING_RATE": LEARNING_RATE,
+        "RANDOM_SEED": RANDOM_SEED,
+        "WEIGHT_INIT": WEIGHT_INIT,
+    }
+
+
 def main():
     np.random.seed(RANDOM_SEED)
 
@@ -115,7 +125,8 @@ def main():
     test_metrics = evaluate(model, X_test, y_test, batch_size=256)
     print(f"Final test accuracy={test_metrics['accuracy']:.4f}")
 
-    plot_history(history)
+    figure_dir = plot_history(history, hyperparams=get_hyperparams())
+    print(f"Saved figures to {figure_dir}")
 
 
 if __name__ == "__main__":
