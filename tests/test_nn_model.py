@@ -10,7 +10,7 @@ Convention:
 import numpy as np
 
 from nn.model import Sequential
-from nn.layers import Linear
+from nn.linear import Linear
 from nn.activations import ReLU
 
 
