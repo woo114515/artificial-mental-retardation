@@ -18,11 +18,15 @@ NUM_EPOCHS = 20 # 总训练次数
 LEARNING_RATE = 0.01 # 学习率
 
 # 优化器
-OPTIMIZER = "sgd" # 可选：'sgd', 'momentum', 'adam'
+OPTIMIZER = "momentum" # 可选：'sgd', 'momentum', 'adam'
 MOMENTUM = 0.9
 BETA1 = 0.9
 BETA2 = 0.999
 EPS = 1e-8
 
+# 激活函数
+ACTIVATION = "Sigmoid" # 可选:'ReLU', 'Sigmoid'
+
+# 参数初始化
 WEIGHT_INIT = "he" # 初始权重的方式
 RANDOM_SEED = 42 # 初始权重的随机种子
