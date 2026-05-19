@@ -1,5 +1,5 @@
 """
-Tests for nn.layers.Linear.
+Tests for nn.linear.Linear.
 
 Convention:
     X:    (batch_size, in_features)
@@ -11,7 +11,7 @@ Convention:
 import numpy as np
 import pytest
 
-from nn.layers import Linear
+from nn.linear import Linear
 
 
 def test_linear_forward_shape():

@@ -12,12 +12,18 @@ def test_plot_history_creates_curve_files(tmp_path):
         "BATCH_SIZE": 64,
         "HIDDEN_DIMS": [128],
         "LEARNING_RATE": 0.01,
+        "OPTIMIZER": "momentum",
+        "ACTIVATION": "ReLU",
         "RANDOM_SEED": 42,
         "WEIGHT_INIT": "he",
+        "MOMENTUM": 0.9,
     }
 
     save_path = plot_history(history, save_dir=tmp_path, hyperparams=hyperparams)
 
-    assert save_path.name == "hidden-128_lr-0.01_bs-64_seed-42_init-he"
+    assert (
+        save_path.name
+        == "bs-64_hidden-128_lr-0.01_opt-momentum_act-ReLU_seed-42_init-he_momentum-0.9"
+    )
     assert (save_path / "loss_curve.png").exists()
     assert (save_path / "accuracy_curve.png").exists()

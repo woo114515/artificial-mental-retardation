@@ -20,8 +20,10 @@ import numpy as np
 
 from .init import initialize_parameters
 
+from .layer import layer
 
-class Linear:
+
+class Linear(layer):
     """
     Fully connected linear layer.
 

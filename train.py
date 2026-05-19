@@ -14,12 +14,44 @@ from config import (
     LEARNING_RATE,
     NUM_CLASSES,
     NUM_EPOCHS,
+    OPTIMIZER,
+    MOMENTUM,
+    BETA1,
+    BETA2,
+    EPS,
+    ACTIVATION,
     RANDOM_SEED,
     WEIGHT_INIT,
 )
 from data.dataloader import create_mini_batches
 from utils.metrics import evaluate
 from utils.plot import plot_history
+
+def build_activation():
+    '''
+    Build the activation
+    '''
+
+    if ACTIVATION == "ReLU":
+        return nn.ReLU()
+    elif ACTIVATION == "Sigmoid":
+        return nn.Sigmoid()
+    else:
+        raise ValueError(f"Unsupported activation: {ACTIVATION}")
+    
+def build_optimizer():
+    '''
+    Build the optimizer
+    '''
+
+    if OPTIMIZER == "sgd":
+        return nn.SGD(LEARNING_RATE)
+    elif OPTIMIZER == "momentum":
+        return nn.Momentum(lr=LEARNING_RATE, momentum=MOMENTUM)
+    elif OPTIMIZER == "adam":
+        return nn.Adam(lr=LEARNING_RATE, beta1=BETA1, beta2=BETA2, eps=EPS)
+    else:
+        raise ValueError(f"Unsupported optimizer: {OPTIMIZER}")
 
 
 def build_model():
@@ -43,7 +75,7 @@ def build_model():
         )
 
         if layer_index < len(layer_dims) - 2:
-            layers.append(nn.ReLU())
+            layers.append(build_activation())
 
     return nn.Sequential(layers)
 
@@ -71,13 +103,24 @@ def train_one_epoch(model, criterion, optimizer, X_train, y_train, batch_size):
 
 
 def get_hyperparams():
-    return {
+    hyperparams = {
         "BATCH_SIZE": BATCH_SIZE,
         "HIDDEN_DIMS": HIDDEN_DIMS,
         "LEARNING_RATE": LEARNING_RATE,
+        "OPTIMIZER": OPTIMIZER,
+        "ACTIVATION": ACTIVATION,
         "RANDOM_SEED": RANDOM_SEED,
         "WEIGHT_INIT": WEIGHT_INIT,
     }
+
+    if OPTIMIZER == "momentum":
+        hyperparams["MOMENTUM"] = MOMENTUM
+    elif OPTIMIZER == "adam":
+        hyperparams["BETA1"] = BETA1
+        hyperparams["BETA2"] = BETA2
+        hyperparams["EPS"] = EPS
+
+    return hyperparams
 
 
 def main():
@@ -87,7 +130,7 @@ def main():
 
     model = build_model()
     criterion = nn.SoftmaxCrossEntropyLoss()
-    optimizer = nn.SGD(LEARNING_RATE)
+    optimizer = build_optimizer()
 
     history = {
         "train_loss": [],

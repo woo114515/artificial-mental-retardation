@@ -15,17 +15,38 @@ def _format_hidden_dims(hidden_dims) -> str:
     return "-".join(str(dim) for dim in hidden_dims)
 
 
+def _format_value(value) -> str:
+    if isinstance(value, list):
+        return _format_hidden_dims(value)
+    return str(value)
+
+
 def _format_hyperparams(hyperparams: dict | None) -> str:
     if not hyperparams:
         return ""
 
-    return (
-        f"hidden={_format_hidden_dims(hyperparams['HIDDEN_DIMS'])}, "
-        f"lr={hyperparams['LEARNING_RATE']}, "
-        f"batch={hyperparams['BATCH_SIZE']}, "
-        f"seed={hyperparams['RANDOM_SEED']}, "
-        f"init={hyperparams['WEIGHT_INIT']}"
+    return ", ".join(
+        f"{key.lower()}={_format_value(value)}"
+        for key, value in hyperparams.items()
     )
+
+
+def _format_key_for_path(key: str) -> str:
+    key_names = {
+        "HIDDEN_DIMS": "hidden",
+        "LEARNING_RATE": "lr",
+        "BATCH_SIZE": "bs",
+        "NUM_EPOCHS": "epochs",
+        "RANDOM_SEED": "seed",
+        "WEIGHT_INIT": "init",
+        "OPTIMIZER": "opt",
+        "ACTIVATION": "act",
+        "MOMENTUM": "momentum",
+        "BETA1": "beta1",
+        "BETA2": "beta2",
+        "EPS": "eps",
+    }
+    return key_names.get(key, key.lower())
 
 
 def _make_run_dir(save_dir: str, hyperparams: dict | None) -> Path:
@@ -34,12 +55,9 @@ def _make_run_dir(save_dir: str, hyperparams: dict | None) -> Path:
     if not hyperparams:
         return base_path
 
-    run_name = (
-        f"hidden-{_format_hidden_dims(hyperparams['HIDDEN_DIMS'])}"
-        f"_lr-{hyperparams['LEARNING_RATE']}"
-        f"_bs-{hyperparams['BATCH_SIZE']}"
-        f"_seed-{hyperparams['RANDOM_SEED']}"
-        f"_init-{hyperparams['WEIGHT_INIT']}"
+    run_name = "_".join(
+        f"{_format_key_for_path(key)}-{_format_value(value)}"
+        for key, value in hyperparams.items()
     )
     return base_path / run_name
 
