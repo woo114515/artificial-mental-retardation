@@ -14,18 +14,18 @@ NUM_CLASSES = 10 # 输出维数
 # 基础参量
 HIDDEN_DIMS = [128] # 隐藏层的结构。如[128]代表只有一层128维的隐藏层
 BATCH_SIZE = 64 # 详见mini-batch gardient descent
-NUM_EPOCHS = 20 # 总训练次数
+NUM_EPOCHS = 100 # 总训练次数
 LEARNING_RATE = 0.01 # 学习率
 
 # 优化器
-OPTIMIZER = "momentum" # 可选：'sgd', 'momentum', 'adam'
+OPTIMIZER = "sgd" # 可选：'sgd', 'momentum', 'adam'
 MOMENTUM = 0.9
 BETA1 = 0.9
 BETA2 = 0.999
 EPS = 1e-8
 
 # 激活函数
-ACTIVATION = "Sigmoid" # 可选:'ReLU', 'Sigmoid'
+ACTIVATION = "ReLU" # 可选:'ReLU', 'Sigmoid'
 
 # 参数初始化
 WEIGHT_INIT = "he" # 初始权重的方式
