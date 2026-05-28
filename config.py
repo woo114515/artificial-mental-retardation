@@ -1,12 +1,18 @@
 '''
 所有的超参数存放在这里。
 '''
-
+'''
+是否使用CNN
+'''
+MODEL_TYPE = "cnn"  # or "mlp"
 '''
 由数据集确定的参量
 '''
 INPUT_DIM = 784 # 输入维数
 NUM_CLASSES = 10 # 输出维数
+IMAGE_CHANNELS = 1
+IMAGE_HEIGHT = 28
+IMAGE_WIDTH = 28
 
 '''
 实验时需要调节的参量
@@ -16,6 +22,14 @@ HIDDEN_DIMS = [128] # 隐藏层的结构。如[128]代表只有一层128维的�
 BATCH_SIZE = 64 # 详见mini-batch gardient descent
 NUM_EPOCHS = 20 # 总训练次数
 LEARNING_RATE = 0.01 # 学习率
+
+# CNN结构
+CNN_OUT_CHANNELS = 8
+CNN_KERNEL_SIZE = 3
+CNN_STRIDE = 1
+CNN_PADDING = 1
+POOL_KERNEL_SIZE = 2
+POOL_STRIDE = 2
 
 # 优化器
 OPTIMIZER = "momentum" # 可选：'sgd', 'momentum', 'adam'

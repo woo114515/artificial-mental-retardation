@@ -9,12 +9,22 @@ import numpy as np
 import nn
 from config import (
     BATCH_SIZE,
+    CNN_KERNEL_SIZE,
+    CNN_OUT_CHANNELS,
+    CNN_PADDING,
+    CNN_STRIDE,
     HIDDEN_DIMS,
+    IMAGE_CHANNELS,
+    IMAGE_HEIGHT,
+    IMAGE_WIDTH,
     INPUT_DIM,
     LEARNING_RATE,
+    MODEL_TYPE,
     NUM_CLASSES,
     NUM_EPOCHS,
     OPTIMIZER,
+    POOL_KERNEL_SIZE,
+    POOL_STRIDE,
     MOMENTUM,
     BETA1,
     BETA2,
@@ -24,6 +34,7 @@ from config import (
     WEIGHT_INIT,
 )
 from data.dataloader import create_mini_batches
+from data.transforms import to_nchw_images
 from utils.metrics import evaluate
 from utils.plot import plot_history
 
@@ -54,7 +65,7 @@ def build_optimizer():
         raise ValueError(f"Unsupported optimizer: {OPTIMIZER}")
 
 
-def build_model():
+def build_mlp():
     """
     Build an MLP from config.py.
 
@@ -78,6 +89,79 @@ def build_model():
             layers.append(build_activation())
 
     return nn.Sequential(layers)
+
+
+def build_cnn():
+    """
+    Build a small CNN for MNIST.
+
+    Structure:
+        Conv2D -> activation -> MaxPool2D -> Flatten -> MLP head
+    """
+    conv_height = (IMAGE_HEIGHT + 2 * CNN_PADDING - CNN_KERNEL_SIZE) // CNN_STRIDE + 1
+    conv_width = (IMAGE_WIDTH + 2 * CNN_PADDING - CNN_KERNEL_SIZE) // CNN_STRIDE + 1
+    pooled_height = (conv_height - POOL_KERNEL_SIZE) // POOL_STRIDE + 1
+    pooled_width = (conv_width - POOL_KERNEL_SIZE) // POOL_STRIDE + 1
+
+    if pooled_height <= 0 or pooled_width <= 0:
+        raise ValueError(
+            f"Invalid CNN spatial size after conv/pool: ({pooled_height}, {pooled_width})."
+        )
+
+    flattened_dim = CNN_OUT_CHANNELS * pooled_height * pooled_width
+    layer_dims = [flattened_dim] + HIDDEN_DIMS + [NUM_CLASSES]
+
+    layers = [
+        nn.Conv2D(
+            in_channels=IMAGE_CHANNELS,
+            out_channels=CNN_OUT_CHANNELS,
+            kernel_size=CNN_KERNEL_SIZE,
+            stride=CNN_STRIDE,
+            padding=CNN_PADDING,
+            method=WEIGHT_INIT,
+            seed=RANDOM_SEED,
+        ),
+        build_activation(),
+        nn.MaxPool2D(kernel_size=POOL_KERNEL_SIZE, stride=POOL_STRIDE),
+        nn.Flatten(),
+    ]
+
+    for layer_index in range(len(layer_dims) - 1):
+        layers.append(
+            nn.Linear(
+                in_features=layer_dims[layer_index],
+                out_features=layer_dims[layer_index + 1],
+                method=WEIGHT_INIT,
+                seed=RANDOM_SEED + layer_index + 1,
+            )
+        )
+
+        if layer_index < len(layer_dims) - 2:
+            layers.append(build_activation())
+
+    return nn.Sequential(layers)
+
+
+def build_model():
+    if MODEL_TYPE == "mlp":
+        return build_mlp()
+    elif MODEL_TYPE == "cnn":
+        return build_cnn()
+    else:
+        raise ValueError(f"Unsupported model type: {MODEL_TYPE}")
+
+
+def prepare_data(X_train, X_val, X_test):
+    if MODEL_TYPE == "mlp":
+        return X_train, X_val, X_test
+    elif MODEL_TYPE == "cnn":
+        return (
+            to_nchw_images(X_train, channels=IMAGE_CHANNELS, height=IMAGE_HEIGHT, width=IMAGE_WIDTH),
+            to_nchw_images(X_val, channels=IMAGE_CHANNELS, height=IMAGE_HEIGHT, width=IMAGE_WIDTH),
+            to_nchw_images(X_test, channels=IMAGE_CHANNELS, height=IMAGE_HEIGHT, width=IMAGE_WIDTH),
+        )
+    else:
+        raise ValueError(f"Unsupported model type: {MODEL_TYPE}")
 
 
 def train_one_epoch(model, criterion, optimizer, X_train, y_train, batch_size):
@@ -104,6 +188,7 @@ def train_one_epoch(model, criterion, optimizer, X_train, y_train, batch_size):
 
 def get_hyperparams():
     hyperparams = {
+        "MODEL_TYPE": MODEL_TYPE,
         "BATCH_SIZE": BATCH_SIZE,
         "HIDDEN_DIMS": HIDDEN_DIMS,
         "LEARNING_RATE": LEARNING_RATE,
@@ -112,6 +197,14 @@ def get_hyperparams():
         "RANDOM_SEED": RANDOM_SEED,
         "WEIGHT_INIT": WEIGHT_INIT,
     }
+
+    if MODEL_TYPE == "cnn":
+        hyperparams["CNN_OUT_CHANNELS"] = CNN_OUT_CHANNELS
+        hyperparams["CNN_KERNEL_SIZE"] = CNN_KERNEL_SIZE
+        hyperparams["CNN_STRIDE"] = CNN_STRIDE
+        hyperparams["CNN_PADDING"] = CNN_PADDING
+        hyperparams["POOL_KERNEL_SIZE"] = POOL_KERNEL_SIZE
+        hyperparams["POOL_STRIDE"] = POOL_STRIDE
 
     if OPTIMIZER == "momentum":
         hyperparams["MOMENTUM"] = MOMENTUM
@@ -127,6 +220,7 @@ def main():
     np.random.seed(RANDOM_SEED)
 
     from data.mnist import X_test, X_train, X_val, y_test, y_train, y_val
+    X_train, X_val, X_test = prepare_data(X_train, X_val, X_test)
 
     model = build_model()
     criterion = nn.SoftmaxCrossEntropyLoss()
