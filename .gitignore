@@ -35,3 +35,6 @@ Thumbs.db
 # Editor files
 .vscode/
 .idea/
+
+# large data
+*.tar.gz
