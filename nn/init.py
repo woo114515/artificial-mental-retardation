@@ -11,7 +11,7 @@ from typing import Optional, Tuple
 import numpy as np
 
 
-__all__ = ["initialize_parameters"] # 这个变量用于控制： from init import * 时，哪些函数会被导入。
+__all__ = ["initialize_parameters", "initialize_parameters_conv2d"] # 这个变量用于控制： from init import * 时，哪些函数会被导入。
 
 
 def initialize_parameters(
@@ -74,6 +74,76 @@ def initialize_parameters(
     # 正态分布
 
     b = np.zeros((1, fan_out))
+
+    return W, b
+
+
+def initialize_parameters_conv2d(
+    in_channel: int,
+    out_channel: int,
+    kernel_size: int,
+    method: str = "he",
+    rng: Optional[np.random.Generator] = None,
+    std: float = 0.01,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Initialize weights and biases for a conv2D layer.
+
+    Parameters
+    ----------
+    in_channels:
+        Number of input channels.
+
+    out_channels:
+        Number of convolution filters.
+
+    kernel_size
+        Height and width of each square convolution kernel.
+
+    method:
+        Initialization method.
+        Supported values:
+            - "normal"
+            - "xavier"
+            - "he"
+
+    rng:
+        NumPy random generator. If None, a new default generator is created.
+
+    std:
+        Standard deviation used only when method == "normal".
+
+    Returns
+    -------
+    W:
+        Weight matrix of shape (in_channel, out_channel, kernel_size, kernel_size).
+
+    b:
+        Bias vector of shape (out_channel,).
+    """
+    _validate_method(method)
+
+    fan_in = in_channel * kernel_size * kernel_size
+    fan_out = out_channel * kernel_size * kernel_size
+
+    if rng is None:
+        rng = np.random.default_rng()
+
+    weight_std = _compute_weight_std(
+        fan_in=fan_in,
+        fan_out=fan_out,
+        method=method,
+        std=std,
+    )
+
+    W = rng.normal(
+        loc=0.0,
+        scale=weight_std,
+        size=(out_channel, in_channel, kernel_size, kernel_size),
+    )
+    # 正态分布
+
+    b = np.zeros(out_channel)
 
     return W, b
 
