@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.pytest_cache
 
 # Virtual environments
 .venv/
@@ -24,6 +25,7 @@ datasets/
 logs/
 runs/
 outputs/
+checkpoints/
 
 # Jupyter
 .ipynb_checkpoints/
@@ -35,3 +37,5 @@ Thumbs.db
 # Editor files
 .vscode/
 .idea/
+.codex/
+
