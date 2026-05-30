@@ -1,0 +1,7 @@
+{
+  "final_train_loss": 0.17326992208690314,
+  "final_val_loss": 0.14342375143539582,
+  "final_train_acc": 0.9524545454545454,
+  "final_val_acc": 0.9632,
+  "test_accuracy": 0.9518
+}
