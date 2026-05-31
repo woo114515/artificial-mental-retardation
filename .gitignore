@@ -38,3 +38,9 @@ Thumbs.db
 
 # large data
 *.tar.gz
+
+.agents/
+.codex/
+
+.pytest_cache
+checkpoints/
