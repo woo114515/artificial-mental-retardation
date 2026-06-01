@@ -1,0 +1,14 @@
+experiment_group,experiment_label,hidden_dims,activation,batch_size,final_train_loss,final_val_loss,final_train_acc,final_val_acc,test_accuracy
+batch_size,batch_size=32,128,ReLU,32,0.011726,0.070597,0.999145,0.981000,0.978400
+batch_size,batch_size=64,128,ReLU,64,0.032275,0.069926,0.993691,0.980000,0.977500
+batch_size,batch_size=128,128,ReLU,128,0.066372,0.081132,0.982782,0.978200,0.972600
+batch_size,batch_size=256,128,ReLU,256,0.115767,0.107079,0.968109,0.972400,0.963400
+hidden_width,hidden_width=64,64,ReLU,64,0.042473,0.081736,0.990055,0.976400,0.973500
+hidden_width,hidden_width=128,128,ReLU,64,0.032275,0.069926,0.993691,0.980000,0.977500
+hidden_width,hidden_width=256,256,ReLU,64,0.025856,0.067500,0.995345,0.980600,0.981000
+hidden_width,hidden_width=512,512,ReLU,64,0.022761,0.063939,0.996764,0.983400,0.979700
+activation,activation=ReLU,128,ReLU,64,0.032275,0.069926,0.993691,0.980000,0.977500
+activation,activation=Sigmoid,128,Sigmoid,64,0.155125,0.133050,0.955673,0.966000,0.953100
+hidden_depth,hidden_dims=[128],128,ReLU,64,0.032275,0.069926,0.993691,0.980000,0.977500
+hidden_depth,hidden_dims=[256-128],256-128,ReLU,64,0.003944,0.079977,0.999964,0.981200,0.979400
+hidden_depth,hidden_dims=[256-128-64],256-128-64,ReLU,64,0.000867,0.102901,1.000000,0.980200,0.977200

@@ -4,7 +4,7 @@
   ],
   "activation": "Sigmoid",
   "batch_size": 64,
-  "num_epochs": 20,
+  "num_epochs": 150,
   "learning_rate": 0.01,
   "optimizer": "sgd",
   "weight_init": "he",
