@@ -15,10 +15,6 @@ from config import (
     CNN_STRIDE,
     DATASET,
     HIDDEN_DIMS,
-    IMAGE_CHANNELS,
-    IMAGE_HEIGHT,
-    IMAGE_WIDTH,
-    INPUT_DIM,
     LEARNING_RATE,
     MODEL_TYPE,
     NUM_CLASSES,
@@ -38,6 +34,30 @@ from data.dataloader import create_mini_batches
 from data.transforms import to_nchw_images
 from utils.metrics import evaluate
 from utils.plot import plot_history
+
+
+DATASET_IMAGE_SHAPES = {
+    "mnist": (1, 28, 28),
+    "fashionmnist": (1, 28, 28),
+    "cifar10": (3, 32, 32),
+}
+
+
+def get_image_shape(dataset: str | None = None) -> tuple[int, int, int]:
+    """
+    Return image shape as (channels, height, width) for a supported dataset.
+    """
+    if dataset is None:
+        dataset = DATASET
+
+    try:
+        return DATASET_IMAGE_SHAPES[dataset]
+    except KeyError as exc:
+        raise ValueError(
+            f"Unsupported dataset: {dataset}. "
+            f"Supported: {', '.join(DATASET_IMAGE_SHAPES)}"
+        ) from exc
+
 
 def build_activation():
     '''
@@ -95,15 +115,16 @@ def build_model(input_dim: int):
     return nn.Sequential(layers)
 
 
-def build_cnn():
+def build_cnn(image_shape: tuple[int, int, int]):
     """
-    Build a small CNN for MNIST.
+    Build a small CNN from the dataset image shape.
 
     Structure:
         Conv2D -> activation -> MaxPool2D -> Flatten -> MLP head
     """
-    conv_height = (IMAGE_HEIGHT + 2 * CNN_PADDING - CNN_KERNEL_SIZE) // CNN_STRIDE + 1
-    conv_width = (IMAGE_WIDTH + 2 * CNN_PADDING - CNN_KERNEL_SIZE) // CNN_STRIDE + 1
+    image_channels, image_height, image_width = image_shape
+    conv_height = (image_height + 2 * CNN_PADDING - CNN_KERNEL_SIZE) // CNN_STRIDE + 1
+    conv_width = (image_width + 2 * CNN_PADDING - CNN_KERNEL_SIZE) // CNN_STRIDE + 1
     pooled_height = (conv_height - POOL_KERNEL_SIZE) // POOL_STRIDE + 1
     pooled_width = (conv_width - POOL_KERNEL_SIZE) // POOL_STRIDE + 1
 
@@ -117,7 +138,7 @@ def build_cnn():
 
     layers = [
         nn.Conv2D(
-            in_channels=IMAGE_CHANNELS,
+            in_channels=image_channels,
             out_channels=CNN_OUT_CHANNELS,
             kernel_size=CNN_KERNEL_SIZE,
             stride=CNN_STRIDE,
@@ -146,23 +167,34 @@ def build_cnn():
     return nn.Sequential(layers)
 
 
-def build_model_from_config(input_dim: int):
+def build_model_from_config(input_dim: int, image_shape: tuple[int, int, int] | None = None):
     if MODEL_TYPE == "mlp":
         return build_model(input_dim=input_dim)
     elif MODEL_TYPE == "cnn":
-        return build_cnn()
+        return build_cnn(image_shape=image_shape or get_image_shape())
     else:
         raise ValueError(f"Unsupported model type: {MODEL_TYPE}")
 
 
-def prepare_data(X_train, X_val, X_test):
+def prepare_data(X_train, X_val, X_test, image_shape: tuple[int, int, int] | None = None):
     if MODEL_TYPE == "mlp":
         return X_train, X_val, X_test
     elif MODEL_TYPE == "cnn":
+        image_channels, image_height, image_width = image_shape or get_image_shape()
+        expected_features = image_channels * image_height * image_width
+        actual_features = X_train.shape[1]
+        if actual_features != expected_features:
+            raise ValueError(
+                f"MODEL_TYPE='cnn' with DATASET='{DATASET}' expects flat images with "
+                f"{expected_features} features from image_shape="
+                f"{(image_channels, image_height, image_width)}; "
+                f"got {actual_features}."
+            )
+
         return (
-            to_nchw_images(X_train, channels=IMAGE_CHANNELS, height=IMAGE_HEIGHT, width=IMAGE_WIDTH),
-            to_nchw_images(X_val, channels=IMAGE_CHANNELS, height=IMAGE_HEIGHT, width=IMAGE_WIDTH),
-            to_nchw_images(X_test, channels=IMAGE_CHANNELS, height=IMAGE_HEIGHT, width=IMAGE_WIDTH),
+            to_nchw_images(X_train, channels=image_channels, height=image_height, width=image_width),
+            to_nchw_images(X_val, channels=image_channels, height=image_height, width=image_width),
+            to_nchw_images(X_test, channels=image_channels, height=image_height, width=image_width),
         )
     else:
         raise ValueError(f"Unsupported model type: {MODEL_TYPE}")
@@ -204,12 +236,16 @@ def get_hyperparams():
     }
 
     if MODEL_TYPE == "cnn":
+        image_channels, image_height, image_width = get_image_shape()
         hyperparams["CNN_OUT_CHANNELS"] = CNN_OUT_CHANNELS
         hyperparams["CNN_KERNEL_SIZE"] = CNN_KERNEL_SIZE
         hyperparams["CNN_STRIDE"] = CNN_STRIDE
         hyperparams["CNN_PADDING"] = CNN_PADDING
         hyperparams["POOL_KERNEL_SIZE"] = POOL_KERNEL_SIZE
         hyperparams["POOL_STRIDE"] = POOL_STRIDE
+        hyperparams["IMAGE_CHANNELS"] = image_channels
+        hyperparams["IMAGE_HEIGHT"] = image_height
+        hyperparams["IMAGE_WIDTH"] = image_width
 
     if OPTIMIZER == "momentum":
         hyperparams["MOMENTUM"] = MOMENTUM
@@ -235,15 +271,22 @@ def main():
         raise ValueError(f"Unsupported dataset: {DATASET}. "
                          f"Supported: 'mnist', 'fashionmnist', 'cifar10'")
 
-    X_train, X_val, X_test = prepare_data(X_train, X_val, X_test)
-
     # 自动推断输入维度（MNIST/Fashion-MNIST=784, CIFAR-10=3072）
     input_dim = X_train.shape[1]
-    print(f"Dataset: {DATASET}, input_dim={input_dim}, "
+    image_shape = get_image_shape(DATASET)
+
+    X_train, X_val, X_test = prepare_data(X_train, X_val, X_test, image_shape=image_shape)
+
+    if MODEL_TYPE == "mlp":
+        input_info = f"input_dim={input_dim}"
+    else:
+        input_info = f"input_shape={X_train.shape[1:]}"
+
+    print(f"Dataset: {DATASET}, model_type={MODEL_TYPE}, {input_info}, "
           f"num_train={X_train.shape[0]}, num_val={X_val.shape[0]}, "
           f"num_test={X_test.shape[0]}")
 
-    model = build_model_from_config(input_dim=input_dim)
+    model = build_model_from_config(input_dim=input_dim, image_shape=image_shape)
     criterion = nn.SoftmaxCrossEntropyLoss()
     optimizer = build_optimizer()
 
