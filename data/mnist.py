@@ -39,7 +39,7 @@ def load_mnist_labels(filename):
 
 # 2. 定位文件并读取
 project_root = Path(__file__).parent
-data_dir = project_root / 'raw'
+data_dir = project_root / 'raw' / 'mnist'
 
 train_images_file = data_dir / 'train-images-idx3-ubyte.gz'
 train_labels_file = data_dir / 'train-labels-idx1-ubyte.gz'

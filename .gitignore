@@ -37,5 +37,12 @@ Thumbs.db
 # Editor files
 .vscode/
 .idea/
+
+# large data
+*.tar.gz
+
+.agents/
 .codex/
 
+.pytest_cache
+checkpoints/

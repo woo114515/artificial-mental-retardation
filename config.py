@@ -20,7 +20,7 @@ IMAGE_WIDTH = 28
 # 基础参量
 HIDDEN_DIMS = [128] # 隐藏层的结构。如[128]代表只有一层128维的隐藏层
 BATCH_SIZE = 64 # 详见mini-batch gardient descent
-NUM_EPOCHS = 15 # 总训练次数
+NUM_EPOCHS = 100 # 总训练次数
 LEARNING_RATE = 0.01 # 学习率
 
 # CNN结构
@@ -32,7 +32,7 @@ POOL_KERNEL_SIZE = 2
 POOL_STRIDE = 2
 
 # 优化器
-OPTIMIZER = "momentum" # 可选：'sgd', 'momentum', 'adam'
+OPTIMIZER = "sgd" # 可选：'sgd', 'momentum', 'adam'
 MOMENTUM = 0.9
 BETA1 = 0.9
 BETA2 = 0.999
@@ -47,3 +47,5 @@ RANDOM_SEED = 42 # 初始权重的随机种子
 
 # 模型保存
 CHECKPOINT_PATH = "checkpoints/latest_model.npz"
+# 数据来源
+DATASET = "mnist" # 可选: 'mnist', 'fashionmnist', 'cifar10'
