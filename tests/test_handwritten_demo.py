@@ -5,19 +5,19 @@ Tests for the browser handwritten digit demo helpers.
 import numpy as np
 import pytest
 
-from config import IMAGE_CHANNELS, IMAGE_HEIGHT, IMAGE_WIDTH, MODEL_TYPE
-from demo_handwritten_digit import metadata_title, prepare_pixels
+import train
+from demo_handwritten_digit import DEMO_IMAGE_HEIGHT, DEMO_IMAGE_WIDTH, metadata_title, prepare_pixels
 
 
 def test_prepare_pixels_returns_model_input_shape():
-    pixels = np.zeros(IMAGE_HEIGHT * IMAGE_WIDTH, dtype=np.float32)
+    pixels = np.zeros(DEMO_IMAGE_HEIGHT * DEMO_IMAGE_WIDTH, dtype=np.float32)
 
     X_model = prepare_pixels(pixels.tolist())
 
-    if MODEL_TYPE == "cnn":
-        assert X_model.shape == (1, IMAGE_CHANNELS, IMAGE_HEIGHT, IMAGE_WIDTH)
+    if train.MODEL_TYPE == "cnn":
+        assert X_model.shape == (1, 1, DEMO_IMAGE_HEIGHT, DEMO_IMAGE_WIDTH)
     else:
-        assert X_model.shape == (1, IMAGE_HEIGHT * IMAGE_WIDTH)
+        assert X_model.shape == (1, DEMO_IMAGE_HEIGHT * DEMO_IMAGE_WIDTH)
 
 
 def test_prepare_pixels_rejects_wrong_size():

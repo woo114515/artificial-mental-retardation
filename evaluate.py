@@ -10,8 +10,8 @@ from pathlib import Path
 import numpy as np
 
 import nn
-from config import CHECKPOINT_PATH, IMAGE_HEIGHT, IMAGE_WIDTH
-from train import build_model, prepare_data
+from config import CHECKPOINT_PATH
+from train import build_model_from_config, get_image_shape, prepare_data
 from utils.checkpoint import load_checkpoint
 from utils.metrics import evaluate as evaluate_metrics
 from utils.prediction_visualization import plot_error_predictions, softmax
@@ -108,9 +108,11 @@ def main() -> None:
 
     from data.mnist import X_test, X_train, X_val, y_test
 
-    _, _, X_test_model = prepare_data(X_train, X_val, X_test)
+    image_shape = get_image_shape("mnist")
+    input_dim = X_test.shape[1]
+    _, _, X_test_model = prepare_data(X_train, X_val, X_test, image_shape=image_shape)
 
-    model = build_model()
+    model = build_model_from_config(input_dim=input_dim, image_shape=image_shape)
     metadata = load_checkpoint(model, args.checkpoint)
     print(f"Loaded checkpoint: {Path(args.checkpoint)}")
     print_metadata(metadata)
@@ -144,7 +146,7 @@ def main() -> None:
         error_indices=error_indices,
         save_path=args.output,
         num_samples=args.num_errors,
-        image_shape=(IMAGE_HEIGHT, IMAGE_WIDTH),
+        image_shape=(image_shape[1], image_shape[2]),
         title=metadata_title(metadata),
     )
     print(f"Saved error visualization to {output_path}")

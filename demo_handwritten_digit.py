@@ -12,10 +12,15 @@ from urllib.parse import urlparse
 
 import numpy as np
 
-from config import CHECKPOINT_PATH, IMAGE_HEIGHT, IMAGE_WIDTH
-from train import build_model, prepare_data
+from config import CHECKPOINT_PATH
+from train import build_model_from_config, prepare_data
 from utils.checkpoint import load_checkpoint
 from utils.prediction_visualization import softmax
+
+
+DEMO_IMAGE_SHAPE = (1, 28, 28)
+DEMO_IMAGE_CHANNELS, DEMO_IMAGE_HEIGHT, DEMO_IMAGE_WIDTH = DEMO_IMAGE_SHAPE
+DEMO_INPUT_DIM = DEMO_IMAGE_CHANNELS * DEMO_IMAGE_HEIGHT * DEMO_IMAGE_WIDTH
 
 
 HTML = """
@@ -292,16 +297,16 @@ def prepare_pixels(pixels: list[float]) -> np.ndarray:
     """
     X = np.asarray(pixels, dtype=np.float32)
 
-    if X.shape != (IMAGE_HEIGHT * IMAGE_WIDTH,):
+    if X.shape != (DEMO_INPUT_DIM,):
         raise ValueError(
-            f"Expected {IMAGE_HEIGHT * IMAGE_WIDTH} pixels, got shape {X.shape}."
+            f"Expected {DEMO_INPUT_DIM} pixels, got shape {X.shape}."
         )
 
     if np.max(X) > 1.0:
         X = X / 255.0
 
     X = np.clip(X, 0.0, 1.0).reshape(1, -1)
-    X_model, _, _ = prepare_data(X, X, X)
+    X_model, _, _ = prepare_data(X, X, X, image_shape=DEMO_IMAGE_SHAPE)
     return X_model
 
 
@@ -403,7 +408,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    model = build_model()
+    model = build_model_from_config(input_dim=DEMO_INPUT_DIM, image_shape=DEMO_IMAGE_SHAPE)
     metadata = load_checkpoint(model, args.checkpoint)
 
     handler = create_handler(model, metadata)
