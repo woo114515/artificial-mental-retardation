@@ -9,6 +9,7 @@ import numpy as np
 import nn
 from config import (
     BATCH_SIZE,
+    CHECKPOINT_PATH,
     CNN_KERNEL_SIZE,
     CNN_OUT_CHANNELS,
     CNN_PADDING,
@@ -32,6 +33,7 @@ from config import (
 )
 from data.dataloader import create_mini_batches
 from data.transforms import to_nchw_images
+from utils.checkpoint import checkpoint_path_from_hyperparams, save_checkpoint
 from utils.metrics import evaluate
 from utils.plot import plot_history
 
@@ -257,6 +259,24 @@ def get_hyperparams():
     return hyperparams
 
 
+def save_model_checkpoints(model, metadata, interrupted: bool = False):
+    latest_checkpoint_path = save_checkpoint(
+        model,
+        CHECKPOINT_PATH,
+        metadata=metadata,
+    )
+    print(f"Saved latest checkpoint to {latest_checkpoint_path}")
+
+    suffix = "_interrupted.npz" if interrupted else ".npz"
+    named_checkpoint_path = checkpoint_path_from_hyperparams(get_hyperparams(), suffix=suffix)
+    save_checkpoint(
+        model,
+        named_checkpoint_path,
+        metadata=metadata,
+    )
+    print(f"Saved named checkpoint to {named_checkpoint_path}")
+
+
 def main():
     np.random.seed(RANDOM_SEED)
 
@@ -297,37 +317,59 @@ def main():
         "val_acc": [],
     }
 
-    for epoch in range(NUM_EPOCHS):
-        train_loss = train_one_epoch(
-            model=model,
-            criterion=criterion,
-            optimizer=optimizer,
-            X_train=X_train,
-            y_train=y_train,
-            batch_size=BATCH_SIZE,
-        )
+    completed_epochs = 0
 
-        train_metrics = evaluate(model, X_train, y_train, batch_size=256)
-        val_metrics = evaluate(model, X_val, y_val, criterion=criterion, batch_size=256)
+    try:
+        for epoch in range(NUM_EPOCHS):
+            train_loss = train_one_epoch(
+                model=model,
+                criterion=criterion,
+                optimizer=optimizer,
+                X_train=X_train,
+                y_train=y_train,
+                batch_size=BATCH_SIZE,
+            )
 
-        history["train_loss"].append(train_loss)
-        history["val_loss"].append(val_metrics["loss"])
-        history["train_acc"].append(train_metrics["accuracy"])
-        history["val_acc"].append(val_metrics["accuracy"])
+            train_metrics = evaluate(model, X_train, y_train, batch_size=256)
+            val_metrics = evaluate(model, X_val, y_val, criterion=criterion, batch_size=256)
 
-        print(
-            f"Epoch {epoch + 1}: "
-            f"train_loss={train_loss:.4f}, "
-            f"val_loss={val_metrics['loss']:.4f}, "
-            f"train_acc={train_metrics['accuracy']:.4f}, "
-            f"val_acc={val_metrics['accuracy']:.4f}"
-        )
+            history["train_loss"].append(train_loss)
+            history["val_loss"].append(val_metrics["loss"])
+            history["train_acc"].append(train_metrics["accuracy"])
+            history["val_acc"].append(val_metrics["accuracy"])
+            completed_epochs = epoch + 1
+
+            print(
+                f"Epoch {epoch + 1}: "
+                f"train_loss={train_loss:.4f}, "
+                f"val_loss={val_metrics['loss']:.4f}, "
+                f"train_acc={train_metrics['accuracy']:.4f}, "
+                f"val_acc={val_metrics['accuracy']:.4f}"
+            )
+    except KeyboardInterrupt:
+        print("\nTraining interrupted. Saving current model checkpoint...")
+        interrupted_metadata = {
+            **get_hyperparams(),
+            "completed_epochs": completed_epochs,
+            "interrupted": True,
+        }
+        save_model_checkpoints(model, interrupted_metadata, interrupted=True)
+        return
 
     test_metrics = evaluate(model, X_test, y_test, batch_size=256)
     print(f"Final test accuracy={test_metrics['accuracy']:.4f}")
 
     figure_dir = plot_history(history, hyperparams=get_hyperparams())
     print(f"Saved figures to {figure_dir}")
+
+    checkpoint_metadata = {
+        **get_hyperparams(),
+        "completed_epochs": completed_epochs,
+        "test_accuracy": test_metrics["accuracy"],
+        "interrupted": False,
+    }
+
+    save_model_checkpoints(model, checkpoint_metadata)
 
 
 if __name__ == "__main__":
