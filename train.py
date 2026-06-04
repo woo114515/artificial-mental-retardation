@@ -9,8 +9,8 @@ import numpy as np
 import nn
 from config import (
     BATCH_SIZE,
+    DATASET,
     HIDDEN_DIMS,
-    INPUT_DIM,
     LEARNING_RATE,
     NUM_CLASSES,
     NUM_EPOCHS,
@@ -54,15 +54,18 @@ def build_optimizer():
         raise ValueError(f"Unsupported optimizer: {OPTIMIZER}")
 
 
-def build_model():
+def build_model(input_dim: int):
     """
     Build an MLP from config.py.
 
+    Args:
+        input_dim: 输入维度，由数据集决定（MNIST=784, CIFAR-10=3072）
+
     Example:
-        HIDDEN_DIMS = [128] builds 784 -> 128 -> 10.
+        HIDDEN_DIMS = [128] builds input_dim -> 128 -> 10.
     """
     layers = []
-    layer_dims = [INPUT_DIM] + HIDDEN_DIMS + [NUM_CLASSES]
+    layer_dims = [input_dim] + HIDDEN_DIMS + [NUM_CLASSES]
 
     for layer_index in range(len(layer_dims) - 1):
         layers.append(
@@ -104,6 +107,7 @@ def train_one_epoch(model, criterion, optimizer, X_train, y_train, batch_size):
 
 def get_hyperparams():
     hyperparams = {
+        "DATASET": DATASET,
         "BATCH_SIZE": BATCH_SIZE,
         "HIDDEN_DIMS": HIDDEN_DIMS,
         "LEARNING_RATE": LEARNING_RATE,
@@ -126,9 +130,24 @@ def get_hyperparams():
 def main():
     np.random.seed(RANDOM_SEED)
 
-    from data.mnist import X_test, X_train, X_val, y_test, y_train, y_val
+    # 根据 DATASET 配置动态导入对应的数据模块
+    if DATASET == "mnist":
+        from data.mnist import X_test, X_train, X_val, y_test, y_train, y_val
+    elif DATASET == "fashionmnist":
+        from data.fashionmnist import X_test, X_train, X_val, y_test, y_train, y_val
+    elif DATASET == "cifar10":
+        from data.cifar10 import X_test, X_train, X_val, y_test, y_train, y_val
+    else:
+        raise ValueError(f"Unsupported dataset: {DATASET}. "
+                         f"Supported: 'mnist', 'fashionmnist', 'cifar10'")
 
-    model = build_model()
+    # 自动推断输入维度（MNIST/Fashion-MNIST=784, CIFAR-10=3072）
+    input_dim = X_train.shape[1]
+    print(f"Dataset: {DATASET}, input_dim={input_dim}, "
+          f"num_train={X_train.shape[0]}, num_val={X_val.shape[0]}, "
+          f"num_test={X_test.shape[0]}")
+
+    model = build_model(input_dim=input_dim)
     criterion = nn.SoftmaxCrossEntropyLoss()
     optimizer = build_optimizer()
 
