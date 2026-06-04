@@ -44,3 +44,6 @@ ACTIVATION = "ReLU" # 可选:'ReLU', 'Sigmoid'
 # 参数初始化
 WEIGHT_INIT = "he" # 初始权重的方式
 RANDOM_SEED = 42 # 初始权重的随机种子
+
+# 数据来源
+DATASET = "mnist" # 可选: 'mnist', 'fashionmnist', 'cifar10'

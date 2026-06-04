@@ -13,6 +13,7 @@ from config import (
     CNN_OUT_CHANNELS,
     CNN_PADDING,
     CNN_STRIDE,
+    DATASET,
     HIDDEN_DIMS,
     IMAGE_CHANNELS,
     IMAGE_HEIGHT,
@@ -65,15 +66,18 @@ def build_optimizer():
         raise ValueError(f"Unsupported optimizer: {OPTIMIZER}")
 
 
-def build_mlp():
+def build_model(input_dim: int):
     """
     Build an MLP from config.py.
 
+    Args:
+        input_dim: 输入维度，由数据集决定（MNIST=784, CIFAR-10=3072）
+
     Example:
-        HIDDEN_DIMS = [128] builds 784 -> 128 -> 10.
+        HIDDEN_DIMS = [128] builds input_dim -> 128 -> 10.
     """
     layers = []
-    layer_dims = [INPUT_DIM] + HIDDEN_DIMS + [NUM_CLASSES]
+    layer_dims = [input_dim] + HIDDEN_DIMS + [NUM_CLASSES]
 
     for layer_index in range(len(layer_dims) - 1):
         layers.append(
@@ -142,9 +146,9 @@ def build_cnn():
     return nn.Sequential(layers)
 
 
-def build_model():
+def build_model_from_config(input_dim: int):
     if MODEL_TYPE == "mlp":
-        return build_mlp()
+        return build_model(input_dim=input_dim)
     elif MODEL_TYPE == "cnn":
         return build_cnn()
     else:
@@ -188,6 +192,7 @@ def train_one_epoch(model, criterion, optimizer, X_train, y_train, batch_size):
 
 def get_hyperparams():
     hyperparams = {
+        "DATASET": DATASET,
         "MODEL_TYPE": MODEL_TYPE,
         "BATCH_SIZE": BATCH_SIZE,
         "HIDDEN_DIMS": HIDDEN_DIMS,
@@ -219,10 +224,26 @@ def get_hyperparams():
 def main():
     np.random.seed(RANDOM_SEED)
 
-    from data.mnist import X_test, X_train, X_val, y_test, y_train, y_val
+    # 根据 DATASET 配置动态导入对应的数据模块
+    if DATASET == "mnist":
+        from data.mnist import X_test, X_train, X_val, y_test, y_train, y_val
+    elif DATASET == "fashionmnist":
+        from data.fashionmnist import X_test, X_train, X_val, y_test, y_train, y_val
+    elif DATASET == "cifar10":
+        from data.cifar10 import X_test, X_train, X_val, y_test, y_train, y_val
+    else:
+        raise ValueError(f"Unsupported dataset: {DATASET}. "
+                         f"Supported: 'mnist', 'fashionmnist', 'cifar10'")
+
     X_train, X_val, X_test = prepare_data(X_train, X_val, X_test)
 
-    model = build_model()
+    # 自动推断输入维度（MNIST/Fashion-MNIST=784, CIFAR-10=3072）
+    input_dim = X_train.shape[1]
+    print(f"Dataset: {DATASET}, input_dim={input_dim}, "
+          f"num_train={X_train.shape[0]}, num_val={X_val.shape[0]}, "
+          f"num_test={X_test.shape[0]}")
+
+    model = build_model_from_config(input_dim=input_dim)
     criterion = nn.SoftmaxCrossEntropyLoss()
     optimizer = build_optimizer()
 
