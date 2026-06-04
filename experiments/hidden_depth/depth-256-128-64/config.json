@@ -1,0 +1,14 @@
+{
+  "hidden_dims": [
+    256,
+    128,
+    64
+  ],
+  "activation": "ReLU",
+  "batch_size": 64,
+  "num_epochs": 150,
+  "learning_rate": 0.01,
+  "optimizer": "sgd",
+  "weight_init": "he",
+  "seed": 42
+}
