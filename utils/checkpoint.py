@@ -5,6 +5,7 @@ Save and load model parameters.
 from __future__ import annotations
 
 import json
+import hashlib
 from pathlib import Path
 
 import numpy as np
@@ -47,10 +48,65 @@ def _format_key_for_path(key: str) -> str:
     return key_names.get(key, key.lower())
 
 
+def _short_run_name(hyperparams: dict, full_run_name: str, max_stem_length: int) -> str:
+    """
+    Build a compact run name when the full hyperparameter filename is too long.
+
+    The complete hyperparameters are still stored in checkpoint metadata; the
+    filename only needs enough information to identify the run at a glance.
+    """
+    short_key_names = {
+        "DATASET": "ds",
+        "MODEL_TYPE": "model",
+        "BATCH_SIZE": "bs",
+        "HIDDEN_DIMS": "h",
+        "LEARNING_RATE": "lr",
+        "OPTIMIZER": "opt",
+        "ACTIVATION": "act",
+        "RANDOM_SEED": "seed",
+        "WEIGHT_INIT": "init",
+        "CNN_OUT_CHANNELS": "cout",
+        "CNN_KERNEL_SIZE": "ck",
+        "MOMENTUM": "mom",
+        "BETA1": "b1",
+        "BETA2": "b2",
+    }
+    preferred_keys = [
+        "DATASET",
+        "MODEL_TYPE",
+        "BATCH_SIZE",
+        "HIDDEN_DIMS",
+        "LEARNING_RATE",
+        "OPTIMIZER",
+        "ACTIVATION",
+        "RANDOM_SEED",
+        "WEIGHT_INIT",
+        "CNN_OUT_CHANNELS",
+        "CNN_KERNEL_SIZE",
+        "MOMENTUM",
+        "BETA1",
+        "BETA2",
+    ]
+
+    parts = []
+    for key in preferred_keys:
+        if key in hyperparams:
+            parts.append(f"{short_key_names[key]}-{_format_value(hyperparams[key])}")
+
+    digest = hashlib.sha1(full_run_name.encode("utf-8")).hexdigest()[:10]
+    short_name = "_".join(parts + [digest])
+
+    if len(short_name) > max_stem_length:
+        short_name = f"{short_name[:max_stem_length - 11]}_{digest}"
+
+    return short_name
+
+
 def checkpoint_path_from_hyperparams(
     hyperparams: dict,
     save_dir: str = "checkpoints",
     suffix: str = ".npz",
+    max_filename_length: int = 180,
 ) -> Path:
     """
     Build a checkpoint path whose filename contains the experiment hyperparameters.
@@ -59,6 +115,14 @@ def checkpoint_path_from_hyperparams(
         f"{_format_key_for_path(key)}-{_format_value(value)}"
         for key, value in hyperparams.items()
     )
+
+    if len(f"{run_name}{suffix}") > max_filename_length:
+        run_name = _short_run_name(
+            hyperparams=hyperparams,
+            full_run_name=run_name,
+            max_stem_length=max_filename_length - len(suffix),
+        )
+
     return Path(save_dir) / f"{run_name}{suffix}"
 
 
