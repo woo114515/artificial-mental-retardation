@@ -1,0 +1,43 @@
+{
+  "dataset": "cifar10",
+  "purpose": "dataset interface smoke experiment",
+  "model_type": "mlp",
+  "input_dim": 3072,
+  "num_classes": 10,
+  "hidden_dims": [
+    64
+  ],
+  "batch_size": 64,
+  "num_epochs": 20,
+  "learning_rate": 0.01,
+  "optimizer": "sgd",
+  "activation": "ReLU",
+  "weight_init": "he",
+  "seed": 42,
+  "train_limit": 5000,
+  "val_limit": 1000,
+  "test_limit": 1000,
+  "full_dataset_shapes": {
+    "X_train": [
+      45000,
+      3072
+    ],
+    "y_train": [
+      45000
+    ],
+    "X_val": [
+      5000,
+      3072
+    ],
+    "y_val": [
+      5000
+    ],
+    "X_test": [
+      10000,
+      3072
+    ],
+    "y_test": [
+      10000
+    ]
+  }
+}

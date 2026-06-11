@@ -1,0 +1,3 @@
+dataset,model_type,input_dim,train_limit,val_limit,test_limit,num_epochs,final_train_loss,final_val_loss,final_test_loss,final_train_acc,final_val_acc,test_accuracy,training_time_seconds
+mnist,mlp,784,20000,2000,2000,30,0.240024,0.174501,0.227643,0.933450,0.952000,0.931500,10.729100
+fashionmnist,mlp,784,20000,2000,2000,30,0.416767,0.423725,0.433845,0.858950,0.856500,0.856500,8.459136
